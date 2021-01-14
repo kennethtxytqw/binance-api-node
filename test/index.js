@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import Binance, { ErrorCodes } from 'index'
+import Binance, { ErrorCodes } from './node_modules/index'
 import { candleFields } from 'http-client'
 import { userEventHandler } from 'websocket'
 

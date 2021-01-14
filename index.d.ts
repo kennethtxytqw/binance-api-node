@@ -334,6 +334,11 @@ declare module 'binance-api-node' {
     user: (callback: (msg: UserDataStreamEvent) => void) => Promise<ReconnectingWebSocketHandler>
     marginUser: (callback: (msg: OutboundAccountInfo | ExecutionReport) => void) => Promise<ReconnectingWebSocketHandler>
     futuresUser: (callback: (msg: OutboundAccountInfo | ExecutionReport) => void) => Promise<ReconnectingWebSocketHandler>
+    futuresMarkPrice: (
+      pair: string | string[],
+      callback: (ticker: FuturesMarkPriceUpdate) => void,
+    ) => ReconnectingWebSocketHandler
+    futuresAllMarkPrices: (callback: (tickers: FuturesMarkPriceUpdate[]) => void) => ReconnectingWebSocketHandler
   }
 
   export type WebSocketCloseOptions = {
@@ -647,6 +652,15 @@ declare module 'binance-api-node' {
     firstTradeId: number
     lastTradeId: number
     totalTrades: number
+  }
+
+  export interface FuturesMarkPriceUpdate {
+    eventType: string
+    eventTime: number
+    symbol: string
+    priceChange: string
+    priceChangePercent: string
+    fundingRate: number
   }
 
   export interface Candle {

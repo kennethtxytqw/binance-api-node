@@ -185,6 +185,15 @@ const futuresTickerTransform = m => ({
   totalTrades: m.n,
 })
 
+const futuresMarkPriceTransform = m => ({
+  eventType: m.e,
+  eventTime: m.E,
+  symbol: m.s,
+  priceChange: m.p,
+  priceChangePercent: m.P,
+  fundingRate: m.r,
+})
+
 const ticker = (payload, cb, transform = true, variator) => {
   const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
     const w = openWebSocket(`${variator === 'futures' ? FUTURES : BASE}/${symbol.toLowerCase()}@ticker`)
@@ -207,6 +216,33 @@ const allTickers = (cb, transform = true, variator) => {
   w.onmessage = msg => {
     const arr = JSON.parse(msg.data)
     cb(transform ? (variator === 'futures' ? arr.map(m => futuresTickerTransform(m)) : arr.map(m => tickerTransform(m))) : arr)
+  }
+
+  return options => w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
+}
+
+const markPrice = (payload, cb, transform = true, variator) => {
+  const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
+    const w = openWebSocket(`${variator === 'futures' ? FUTURES : BASE}/${symbol.toLowerCase()}@markPrice`)
+
+    w.onmessage = msg => {
+      const obj = JSON.parse(msg.data)
+      cb(transform ? (variator === 'futures' ? futuresMarkPriceTransform(obj) : markPriceTransform(obj)) : obj)
+    }
+
+    return w
+  })
+
+  return options =>
+    cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
+}
+
+const allMarkPrices = (cb, transform = true, variator) => {
+  const w = new openWebSocket(`${variator === 'futures' ? FUTURES : BASE}/!markPrice@arr`)
+
+  w.onmessage = msg => {
+    const arr = JSON.parse(msg.data)
+    cb(transform ? (variator === 'futures' ? arr.map(m => futuresMarkPriceTransform(m)) : arr.map(m => markPriceTransform(m))) : arr)
   }
 
   return options => w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
@@ -539,6 +575,8 @@ export default opts => ({
   futuresCandles: (payload, interval, cb, transform) => candles(payload, interval, cb, transform, 'futures'),
   futuresTicker: (payload, cb, transform) => ticker(payload, cb, transform, 'futures'),
   futuresAllTickers: (cb, transform) => allTickers(cb, transform, 'futures'),
+  futuresMarkPrice: (cb, transform) => markPrice(cb, transform, 'futures'),
+  futuresAllMarkPrices: (cb, transform) => allMarkPrices(cb, transform, 'futures'),
   futuresAggTrades: (payload, cb, transform) => aggTrades(payload, cb, transform, 'futures'),
   futuresUser: user(opts, 'futures'),
 })
